@@ -1,0 +1,453 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Duolingo 60s Photo Writing Trainer</title>
+  <style>
+    :root{
+      --bg:#0b1020; --card:#121a33; --muted:#9aa7c7; --text:#e7ecff;
+      --accent:#7aa2ff; --ok:#3ddc97; --warn:#ffcc66; --bad:#ff6b6b;
+      --border:rgba(255,255,255,.10);
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0; font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;
+      background: radial-gradient(900px 600px at 20% 10%, #162052 0%, var(--bg) 50%);
+      color:var(--text);
+    }
+    .wrap{max-width:1100px; margin:0 auto; padding:18px;}
+    .top{
+      display:flex; flex-wrap:wrap; gap:12px; align-items:center; justify-content:space-between;
+      margin-bottom:14px;
+    }
+    .brand{display:flex; flex-direction:column; gap:4px}
+    .brand h1{font-size:18px; margin:0; letter-spacing:.2px}
+    .brand p{margin:0; color:var(--muted); font-size:13px}
+    .row{display:grid; grid-template-columns: 1.2fr .8fr; gap:14px;}
+    @media (max-width: 900px){ .row{grid-template-columns:1fr;} }
+
+    .card{
+      background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.03));
+      border:1px solid var(--border);
+      border-radius:16px;
+      overflow:hidden;
+      box-shadow: 0 10px 30px rgba(0,0,0,.35);
+    }
+    .card .hd{
+      display:flex; align-items:center; justify-content:space-between;
+      padding:12px 14px; border-bottom:1px solid var(--border);
+      gap:10px; flex-wrap:wrap;
+    }
+    .badge{
+      display:inline-flex; align-items:center; gap:8px;
+      padding:6px 10px; border-radius:999px; font-size:12px;
+      border:1px solid var(--border); color:var(--muted);
+      background: rgba(0,0,0,.2);
+    }
+    .dot{width:8px; height:8px; border-radius:999px; background:var(--muted)}
+    .dot.ok{background:var(--ok)}
+    .dot.warn{background:var(--warn)}
+    .dot.bad{background:var(--bad)}
+
+    .btns{display:flex; gap:10px; flex-wrap:wrap}
+    button{
+      appearance:none; border:1px solid var(--border); background: rgba(0,0,0,.25);
+      color:var(--text); padding:10px 12px; border-radius:12px; cursor:pointer;
+      font-weight:600; font-size:13px;
+    }
+    button:hover{border-color: rgba(122,162,255,.5)}
+    button:disabled{opacity:.45; cursor:not-allowed}
+    .primary{background: rgba(122,162,255,.18); border-color: rgba(122,162,255,.45)}
+    .danger{background: rgba(255,107,107,.12); border-color: rgba(255,107,107,.35)}
+
+    .imgbox{position:relative; aspect-ratio: 16/10; background:#0a0f1e}
+    .imgbox img{
+      width:100%; height:100%; object-fit:cover; display:block;
+      filter: contrast(1.05) saturate(1.05);
+    }
+    .imgmeta{
+      position:absolute; left:12px; bottom:12px; right:12px;
+      display:flex; gap:10px; flex-wrap:wrap; align-items:center; justify-content:space-between;
+    }
+    .pill{
+      padding:7px 10px; border-radius:999px; font-size:12px;
+      background: rgba(0,0,0,.45); border:1px solid rgba(255,255,255,.14);
+      backdrop-filter: blur(8px);
+      color: rgba(231,236,255,.92);
+    }
+
+    .panel{padding:12px 14px}
+    textarea{
+      width:100%; min-height:220px; resize:vertical;
+      border-radius:14px; border:1px solid var(--border);
+      background: rgba(0,0,0,.25); color:var(--text);
+      padding:12px; font-size:14px; line-height:1.5;
+      outline:none;
+    }
+    textarea:focus{border-color: rgba(122,162,255,.6)}
+    .grid2{display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:10px}
+    @media (max-width: 520px){ .grid2{grid-template-columns:1fr;} }
+    .kpi{
+      border:1px solid var(--border); border-radius:14px; padding:10px 12px;
+      background: rgba(0,0,0,.18);
+      display:flex; flex-direction:column; gap:6px;
+    }
+    .kpi .label{font-size:12px; color:var(--muted)}
+    .kpi .value{font-size:18px; font-weight:800; letter-spacing:.2px}
+    .kpi small{color:var(--muted)}
+    .hint{color:var(--muted); font-size:13px; margin-top:10px; line-height:1.45}
+    .hr{height:1px; background: var(--border); margin:12px 0}
+    .footer{color:var(--muted); font-size:12px; margin-top:12px}
+    .mono{font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="top">
+      <div class="brand">
+        <h1>Duolingo 60s Photo Writing Trainer</h1>
+        <p>Rastgele foto → 5s hazırlık → 60s yazma → süre bitince kilit. Metni kopyala, ChatGPT’ye yapıştır.</p>
+      </div>
+      <div class="btns">
+        <button id="btnNew" class="primary">New Photo</button>
+        <button id="btnStart" class="primary">Start Round</button>
+        <button id="btnStop" class="danger">Stop</button>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="card">
+        <div class="hd">
+          <div class="badge" id="statusBadge">
+            <span class="dot warn" id="statusDot"></span>
+            <span id="statusText">Ready</span>
+          </div>
+          <div class="badge">
+            <span class="mono">Prep:</span> <span class="mono" id="prep">5</span>s
+            &nbsp;•&nbsp;
+            <span class="mono">Write:</span> <span class="mono" id="write">60</span>s
+          </div>
+        </div>
+        <div class="imgbox">
+          <img id="photo" alt="Random photo" />
+          <div class="imgmeta">
+            <div class="pill" id="photoTag">Loading random photo…</div>
+            <div class="pill mono" id="roundClock">--:--</div>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="hint">
+            <b>Şablon (öneri):</b>
+            <span class="mono">In the picture, I see… / In the foreground… / In the background… / Overall…</span><br/>
+            <b>Not:</b> Ülke/kimlik tahmin etme. Emin olmadığın şeyi yazma. “two, three” kullan; “2” yazma.
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="hd">
+          <div class="badge">
+            <span class="dot" id="lockDot"></span>
+            <span id="lockText">Text locked until round starts</span>
+          </div>
+          <div class="badge">
+            Words: <span class="mono" id="words">0</span>
+            &nbsp;•&nbsp; Chars: <span class="mono" id="chars">0</span>
+          </div>
+        </div>
+
+        <div class="panel">
+          <textarea id="answer" placeholder="60 saniye başlayınca burada yazacaksın…" disabled></textarea>
+
+          <div class="grid2">
+            <div class="kpi">
+              <div class="label">Timer</div>
+              <div class="value mono" id="timer">00:00</div>
+              <small id="phaseHelp">New Photo → Start Round</small>
+            </div>
+            <div class="kpi">
+              <div class="label">Actions</div>
+              <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                <button id="btnCopy" disabled>Copy Text</button>
+                <button id="btnReset" disabled>Reset Text</button>
+              </div>
+              <small>Bitince kopyala → ChatGPT’ye yapıştır → değerlendirelim.</small>
+            </div>
+          </div>
+
+          <div class="hr"></div>
+          <div class="hint">
+            <b>Hedef:</b> 4–6 cümle, akıcı, hatasız. <br/>
+            <b>Bitince:</b> “Copy Text” → buraya yapıştır.
+          </div>
+
+          <div class="footer">
+            Foto kaynağı: Unsplash random (key gerektirmez). Eğer foto gelmezse “New Photo”ya bas.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ---- Config
+    const PREP_SECONDS = 5;
+    const WRITE_SECONDS = 60;
+
+    // Unsplash "source" endpoint (no API key needed)
+    // Add keywords to bias towards Duolingo-like scenes
+const UNSPLASH_URL = () => {
+  const topics = [
+    "people",
+    "city",
+    "street",
+    "market",
+    "nature",
+    "beach",
+    "mountain",
+    "village",
+    "transport"
+  ];
+  const pick = topics[Math.floor(Math.random() * topics.length)];
+  return `https://picsum.photos/1600/1000?random=${Date.now()}&${pick}`;
+};
+
+
+
+    // ---- State
+    let phase = "idle"; // idle | prep | write | done
+    let t = 0;
+    let interval = null;
+
+    // ---- Elements
+    const img = document.getElementById("photo");
+    const photoTag = document.getElementById("photoTag");
+    const roundClock = document.getElementById("roundClock");
+
+    const statusDot = document.getElementById("statusDot");
+    const statusText = document.getElementById("statusText");
+
+    const prepEl = document.getElementById("prep");
+    const writeEl = document.getElementById("write");
+    prepEl.textContent = PREP_SECONDS;
+    writeEl.textContent = WRITE_SECONDS;
+
+    const answer = document.getElementById("answer");
+    const timerEl = document.getElementById("timer");
+    const phaseHelp = document.getElementById("phaseHelp");
+
+    const wordsEl = document.getElementById("words");
+    const charsEl = document.getElementById("chars");
+
+    const lockDot = document.getElementById("lockDot");
+    const lockText = document.getElementById("lockText");
+
+    const btnNew = document.getElementById("btnNew");
+    const btnStart = document.getElementById("btnStart");
+    const btnStop = document.getElementById("btnStop");
+    const btnCopy = document.getElementById("btnCopy");
+    const btnReset = document.getElementById("btnReset");
+
+    // ---- Helpers
+    function setStatus(kind, text){
+      statusDot.className = "dot " + (kind === "ok" ? "ok" : kind === "bad" ? "bad" : "warn");
+      statusText.textContent = text;
+    }
+
+    function setLock(isLocked, text){
+      lockDot.className = "dot " + (isLocked ? "bad" : "ok");
+      lockText.textContent = text;
+      answer.disabled = isLocked;
+      if(!isLocked) answer.focus();
+    }
+
+    function fmt(sec){
+      const m = Math.floor(sec/60);
+      const s = sec % 60;
+      return String(m).padStart(2,"0") + ":" + String(s).padStart(2,"0");
+    }
+
+    function updateCounters(){
+      const txt = answer.value.trim();
+      const words = txt ? txt.split(/\s+/).length : 0;
+      wordsEl.textContent = words;
+      charsEl.textContent = answer.value.length;
+    }
+
+    function clearIntervalSafe(){
+      if(interval){ clearInterval(interval); interval = null; }
+    }
+
+    function setPhase(newPhase){
+      phase = newPhase;
+
+      if(phase === "idle"){
+        setStatus("warn","Ready");
+        setLock(true,"Text locked until round starts");
+        timerEl.textContent = "00:00";
+        phaseHelp.textContent = "New Photo → Start Round";
+        btnCopy.disabled = true;
+        btnReset.disabled = true;
+        btnStart.disabled = false;
+      }
+
+      if(phase === "prep"){
+        setStatus("warn","Prep (5s)");
+        setLock(true,"Prep running… (typing locked)");
+        btnStart.disabled = true;
+        btnCopy.disabled = true;
+        btnReset.disabled = true;
+      }
+
+      if(phase === "write"){
+        setStatus("ok","Writing (60s)");
+        setLock(false,"Typing enabled (60s)");
+        btnCopy.disabled = true;
+        btnReset.disabled = false;
+      }
+
+      if(phase === "done"){
+        setStatus("bad","Time’s up (locked)");
+        setLock(true,"Time is up — locked");
+        btnCopy.disabled = !answer.value.trim();
+        btnReset.disabled = false;
+        btnStart.disabled = false;
+      }
+    }
+
+    // ---- Core timers
+    function tick(){
+      // show a clock-like indicator
+      const now = new Date();
+      roundClock.textContent = now.toLocaleTimeString([], {hour:"2-digit", minute:"2-digit"});
+
+      t -= 1;
+      timerEl.textContent = fmt(t);
+
+      if(t <= 0){
+        if(phase === "prep"){
+          // switch to write
+          phaseHelp.textContent = "Write now. No edits after 60s.";
+          t = WRITE_SECONDS;
+          timerEl.textContent = fmt(t);
+          setPhase("write");
+          return;
+        }
+        if(phase === "write"){
+          phaseHelp.textContent = "Locked. Copy your text and paste to ChatGPT.";
+          setPhase("done");
+          clearIntervalSafe();
+          return;
+        }
+      }
+    }
+
+    function startRound(){
+      // must have an image loaded
+      if(!img.src){
+        loadNewPhoto().then(() => startRound());
+        return;
+      }
+      clearIntervalSafe();
+      t = PREP_SECONDS;
+      timerEl.textContent = fmt(t);
+      phaseHelp.textContent = "Look at the photo. Think. Don’t type.";
+      setPhase("prep");
+      interval = setInterval(tick, 1000);
+    }
+
+    function stopRound(){
+      clearIntervalSafe();
+      phaseHelp.textContent = "Stopped. You can start again.";
+      setPhase("idle");
+    }
+
+    // ---- Photo loading
+    async function loadNewPhoto(){
+      setStatus("warn","Loading photo…");
+      photoTag.textContent = "Loading random photo…";
+
+      // Force refresh by appending a cache buster.
+      const url = UNSPLASH_URL() + "&sig=" + Math.floor(Math.random()*1e9);
+      img.src = url;
+
+      // Wait for load/error
+      await new Promise((resolve) => {
+        let done = false;
+        const finish = () => { if(!done){ done=true; resolve(); } };
+        img.onload = finish;
+        img.onerror = finish;
+        setTimeout(finish, 2500); // fallback
+      });
+
+      // Tag hint (not guaranteed—no metadata here)
+      photoTag.textContent = "Describe what you SEE (no guessing).";
+      setPhase("idle");
+    }
+
+    // ---- Events
+    btnNew.addEventListener("click", async () => {
+      if(phase === "prep" || phase === "write"){
+        // don't allow changing photo mid-round
+        return;
+      }
+      await loadNewPhoto();
+    });
+
+    btnStart.addEventListener("click", () => {
+      if(phase === "prep" || phase === "write") return;
+      startRound();
+    });
+
+    btnStop.addEventListener("click", () => {
+      stopRound();
+    });
+
+    btnCopy.addEventListener("click", async () => {
+      const txt = answer.value.trim();
+      if(!txt) return;
+      try{
+        await navigator.clipboard.writeText(txt);
+        btnCopy.textContent = "Copied!";
+        setTimeout(()=> btnCopy.textContent="Copy Text", 900);
+      }catch{
+        // fallback: select
+        answer.focus();
+        answer.select();
+        document.execCommand("copy");
+      }
+    });
+
+    btnReset.addEventListener("click", () => {
+      answer.value = "";
+      updateCounters();
+      btnCopy.disabled = true;
+    });
+
+    answer.addEventListener("input", () => {
+      updateCounters();
+    });
+
+    // Prevent typing when locked (extra safety)
+    answer.addEventListener("keydown", (e) => {
+      if(answer.disabled){
+        e.preventDefault();
+      }
+    });
+
+    // ---- Init
+    (function init(){
+      setPhase("idle");
+      updateCounters();
+      loadNewPhoto();
+      roundClock.textContent = new Date().toLocaleTimeString([], {hour:"2-digit", minute:"2-digit"});
+      setInterval(() => {
+        // update clock only
+        const now = new Date();
+        roundClock.textContent = now.toLocaleTimeString([], {hour:"2-digit", minute:"2-digit"});
+      }, 1000);
+    })();
+  </script>
+</body>
+</html>
