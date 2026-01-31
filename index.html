@@ -300,12 +300,21 @@ const UNSPLASH_URL = () => {
         btnReset.disabled = true;
       }
 
-      if(phase === "write"){
-        setStatus("ok","Writing (60s)");
-        setLock(false,"Typing enabled (60s)");
-        btnCopy.disabled = true;
-        btnReset.disabled = false;
-      }
+if (phase === "write") {
+  phaseHelp.textContent = "AI is scoring your answer…";
+  setPhase("done");
+  clearIntervalSafe();
+
+  aiScore(answer.value).then(result => {
+    alert(
+      "AI Duolingo Score: " + result.score + " / 160\n\n" +
+      "Feedback:\n" + result.feedback
+    );
+  });
+
+  return;
+}
+
 
       if(phase === "done"){
         setStatus("bad","Time’s up (locked)");
@@ -465,5 +474,6 @@ const UNSPLASH_URL = () => {
 </body>
   
 </html>
+
 
 
