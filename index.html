@@ -448,6 +448,22 @@ const UNSPLASH_URL = () => {
         roundClock.textContent = now.toLocaleTimeString([], {hour:"2-digit", minute:"2-digit"});
       }, 1000);
     })();
+    async function aiScore(text) {
+  const res = await fetch("/.netlify/functions/score", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      text,
+      imageUrl: document.getElementById("photo").src
+    })
+  });
+
+  return await res.json();
+}
+
   </script>
 </body>
+  
 </html>
+
+
